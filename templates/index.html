@@ -7,5 +7,30 @@
 </head>
 <body>
     <h1>WeatherVision is Working!</h1>
+    
+    <form method="post">
+        {% csrf_token %}
+        <input type="text" name="city" placeholder="Enter city name..." required>
+        <button type="submit">Search</button>
+    </form>
+    
+    {%if error%}
+        <p>Error City Not Found</p>
+    {% endif %}
+
+    {% if weather %}
+     <div>
+        <h2>{{weather.city}} {{weather.country}}</h2>
+        <img src="https://openweathermap.org/img/wn/{{ weather.icon }}@2x.png" alt="weather icon">
+        <p>{{ weather.description}}</p>
+        <p>Temperature: {{ weather.temperature }}°C</p>
+        <p>Feels Like: {{ weather.feels_like }}°C</p>
+        <p>Humidity: {{ weather.humidity }}%</p>
+        <p>Pressure: {{ weather.pressure }} hPa</p>
+        <p>Wind Speed: {{ weather.wind_speed }} m/s</p>
+        <p>Visibility: {{ weather.visibility }} m</p>
+        <p>Clouds: {{ weather.clouds }}%</p>
+    </div>
+    {% endif %}
 </body>
 </html>
