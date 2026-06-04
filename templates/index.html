@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WeatherVision</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -41,7 +42,6 @@
             padding: 20px;
         }
 
-        /* Header */
         .header {
             display: flex;
             justify-content: space-between;
@@ -78,7 +78,6 @@
             color: white;
         }
 
-        /* Search */
         .search-container {
             max-width: 900px;
             margin: 0 auto 30px;
@@ -123,7 +122,6 @@
             opacity: 0.9;
         }
 
-        /* Error */
         .error {
             max-width: 900px;
             margin: 0 auto 20px;
@@ -134,7 +132,6 @@
             border-radius: 12px;
         }
 
-        /* Weather Card */
         .weather-container {
             max-width: 900px;
             margin: 0 auto;
@@ -150,7 +147,10 @@
             padding: 24px;
         }
 
-        /* Main Card */
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
         .main-card {
             grid-column: 1 / -1;
             display: flex;
@@ -175,7 +175,6 @@
             color: var(--accent);
             font-size: 1.1rem;
             margin-top: 8px;
-            text-transform: capitalize;
         }
 
         .temp-section {
@@ -199,7 +198,6 @@
             margin-top: 6px;
         }
 
-        /* Info Cards */
         .info-card {
             display: flex;
             align-items: center;
@@ -216,6 +214,7 @@
             justify-content: center;
             font-size: 1.3rem;
             color: var(--accent);
+            flex-shrink: 0;
         }
 
         .info-label {
@@ -227,6 +226,65 @@
         .info-value {
             font-size: 1.2rem;
             font-weight: 600;
+        }
+
+        /* Forecast */
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .forecast-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+        }
+
+        .forecast-item {
+            background: var(--bg-secondary);
+            border-radius: 14px;
+            padding: 14px 10px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .forecast-date {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .forecast-icon {
+            width: 48px;
+            height: 48px;
+        }
+
+        .forecast-temp-max {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .forecast-temp-min {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .forecast-desc {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+
+        /* Charts */
+        .chart-wrapper {
+            position: relative;
+            height: 220px;
         }
     </style>
 </head>
@@ -265,7 +323,6 @@
         </div>
     {% endif %}
 
-    <!-- Weather Data -->
     {% if weather %}
     <div class="weather-container">
 
@@ -277,11 +334,9 @@
                 <div class="description">{{ weather.description }}</div>
             </div>
             <div class="temp-section">
-                <img
-                    class="weather-icon"
+                <img class="weather-icon"
                     src="https://openweathermap.org/img/wn/{{ weather.icon }}@2x.png"
-                    alt="weather icon"
-                >
+                    alt="weather icon">
                 <div class="temperature">{{ weather.temperature }}°C</div>
                 <div class="feels-like">Feels like {{ weather.feels_like }}°C</div>
             </div>
@@ -323,10 +378,49 @@
             </div>
         </div>
 
+        <!-- 5 Day Forecast -->
+        {% if forecast %}
+        <div class="card full-width">
+            <div class="section-title">5-Day Forecast</div>
+            <div class="forecast-grid">
+                {% for day in forecast %}
+                <div class="forecast-item">
+                    <div class="forecast-date">{{ day.date }}</div>
+                    <img class="forecast-icon"
+                        src="https://openweathermap.org/img/wn/{{ day.icon }}@2x.png"
+                        alt="icon">
+                    <div class="forecast-temp-max">{{ day.temp_max }}°C</div>
+                    <div class="forecast-temp-min">{{ day.temp_min }}°C</div>
+                    <div class="forecast-desc">{{ day.description }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Temperature Chart -->
+        {% if forecast %}
+        <div class="card full-width">
+            <div class="section-title">Temperature Trend</div>
+            <div class="chart-wrapper">
+                <canvas id="tempChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Humidity Chart -->
+        <div class="card full-width">
+            <div class="section-title">Humidity Trend</div>
+            <div class="chart-wrapper">
+                <canvas id="humidityChart"></canvas>
+            </div>
+        </div>
+        {% endif %}
+
     </div>
     {% endif %}
 
     <script>
+        // Theme Toggle
         function toggleTheme() {
             const html = document.documentElement;
             const icon = document.getElementById('theme-icon');
@@ -342,7 +436,89 @@
                 text.textContent = 'Light Mode';
             }
         }
+
+        // Charts
+        {% if forecast %}
+        const labels = [{% for day in forecast %}"{{ day.date }}"{% if not forloop.last %},{% endif %}{% endfor %}];
+        const tempMax = [{% for day in forecast %}{{ day.temp_max }}{% if not forloop.last %},{% endif %}{% endfor %}];
+        const tempMin = [{% for day in forecast %}{{ day.temp_min }}{% if not forloop.last %},{% endif %}{% endfor %}];
+        const humidity = [{% for day in forecast %}{{ day.humidity }}{% if not forloop.last %},{% endif %}{% endfor %}];
+
+        // Temperature Chart
+        new Chart(document.getElementById('tempChart'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Max Temp (°C)',
+                        data: tempMax,
+                        borderColor: '#38bdf8',
+                        backgroundColor: '#38bdf820',
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#38bdf8',
+                    },
+                    {
+                        label: 'Min Temp (°C)',
+                        data: tempMin,
+                        borderColor: '#818cf8',
+                        backgroundColor: '#818cf820',
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#818cf8',
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: '#94a3b8' }
+                    }
+                },
+                scales: {
+                    x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+                    y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+                }
+            }
+        });
+
+        // Humidity Chart
+        new Chart(document.getElementById('humidityChart'), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Humidity (%)',
+                    data: humidity,
+                    backgroundColor: '#38bdf850',
+                    borderColor: '#38bdf8',
+                    borderWidth: 2,
+                    borderRadius: 8,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: '#94a3b8' }
+                    }
+                },
+                scales: {
+                    x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+                    y: {
+                        ticks: { color: '#94a3b8' },
+                        grid: { color: '#334155' },
+                        max: 100
+                    }
+                }
+            }
+        });
+        {% endif %}
     </script>
 
 </body>
-</html>
+</html> 

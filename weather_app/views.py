@@ -26,6 +26,33 @@ def home(request):
             'visibility': response.get('visibility', 0),
             'clouds': response['clouds']['all'],
             }
-        else:
-            error = "City no found. Please try again."
-    return render(request, 'index.html', {'weather': weather_data, 'error': error})
+
+        forecast_url = f"https://api.openweathermap.org/data/2.5/forecast?q={city}&appid={settings.WEATHER_API_KEY}&units=metric"
+        forecast_response = requests.get(forecast_url).json()
+        
+        forecast_data = []
+        seen_dates = []
+        for item in forecast_response['list']:
+                date = item['dt_txt'].split(' ')[0]
+                if date not in seen_dates:
+                    seen_dates.append(date)
+                    forecast_data.append({
+                        'date': date,
+                        'temp_max': round(item['main']['temp_max']),
+                        'temp_min': round(item['main']['temp_min']),
+                        'description': item['weather'][0]['description'].title(),
+                        'icon': item['weather'][0]['icon'],
+                        'humidity': item['main']['humidity'],
+                    })
+
+        # Only keep 5 days
+        forecast_data = forecast_data[:5]
+
+    else:
+        error = "City no found. Please try again."
+        
+    return render(request, 'index.html', {
+        'weather': weather_data,
+        'forecast': forecast_data,
+        'error': error,
+    })
