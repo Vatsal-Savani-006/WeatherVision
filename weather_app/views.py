@@ -6,6 +6,7 @@ import requests
 def home(request):
     weather_data = None
     error = None
+    forecast_data = []
 
     if request.method == 'POST':
         city = request.POST.get('city')
@@ -30,7 +31,6 @@ def home(request):
         forecast_url = f"https://api.openweathermap.org/data/2.5/forecast?q={city}&appid={settings.WEATHER_API_KEY}&units=metric"
         forecast_response = requests.get(forecast_url).json()
         
-        forecast_data = []
         seen_dates = []
         for item in forecast_response['list']:
                 date = item['dt_txt'].split(' ')[0]
