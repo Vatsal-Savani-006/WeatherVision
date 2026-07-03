@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeatherVision</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        :root[data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --accent: #38bdf8;
+            --border: #334155;
+        }
+
+        :root[data-theme="light"] {
+            --bg-primary: #f0f9ff;
+            --bg-secondary: #e0f2fe;
+            --bg-card: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --accent: #0284c7;
+            --border: #bae6fd;
+        }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 900px;
+            margin: 0 auto 30px;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .logo span {
+            color: var(--text-primary);
+        }
+
+        .theme-btn {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .theme-btn:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        .search-container {
+            max-width: 900px;
+            margin: 0 auto 30px;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 14px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .search-btn {
+            padding: 14px 28px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .search-btn:hover {
+            opacity: 0.9;
+        }
+
+        .error {
+            max-width: 900px;
+            margin: 0 auto 20px;
+            background: #ef444420;
+            border: 1px solid #ef4444;
+            color: #ef4444;
+            padding: 12px 20px;
+            border-radius: 12px;
+        }
+
+        .weather-container {
+            max-width: 900px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 24px;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .main-card {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .city-name {
+            font-size: 2.4rem;
+            font-weight: 700;
+        }
+
+        .country {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-top: 4px;
+        }
+
+        .description {
+            color: var(--accent);
+            font-size: 1.1rem;
+            margin-top: 8px;
+        }
+
+        .temp-section {
+            text-align: center;
+        }
+
+        .weather-icon {
+            width: 100px;
+            height: 100px;
+        }
+
+        .temperature {
+            font-size: 4rem;
+            font-weight: 700;
+            color: var(--accent);
+            line-height: 1;
+        }
+
+        .feels-like {
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+
+        .info-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .info-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+
+        .info-label {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+        }
+
+        .info-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        /* Forecast */
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .forecast-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+        }
+
+        .forecast-item {
+            background: var(--bg-secondary);
+            border-radius: 14px;
+            padding: 14px 10px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .forecast-date {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .forecast-icon {
+            width: 48px;
+            height: 48px;
+        }
+
+        .forecast-temp-max {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .forecast-temp-min {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .forecast-desc {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+
+        /* Charts */
+        .chart-wrapper {
+            position: relative;
+            height: 220px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">Weather<span>Vision</span></div>
+        <button class="theme-btn" onclick="toggleTheme()">
+            <i class="fas fa-moon" id="theme-icon"></i>
+            <span id="theme-text">Light Mode</span>
+        </button>
+    </div>
+
+    <!-- Search -->
+    <div class="search-container">
+        <form class="search-form" method="POST">
+            {% csrf_token %}
+            <input
+                class="search-input"
+                type="text"
+                name="city"
+                placeholder="Search for a city..."
+                required
+            >
+            <button class="search-btn" type="submit">
+                <i class="fas fa-search"></i> Search
+            </button>
+        </form>
+    </div>
+
+    <!-- Error -->
+    {% if error %}
+        <div class="error">
+            <i class="fas fa-exclamation-circle"></i> {{ error }}
+        </div>
+    {% endif %}
+
+    {% if weather %}
+    <div class="weather-container">
+
+        <!-- Main Card -->
+        <div class="card main-card">
+            <div>
+                <div class="city-name">{{ weather.city }}</div>
+                <div class="country"><i class="fas fa-map-marker-alt"></i> {{ weather.country }}</div>
+                <div class="description">{{ weather.description }}</div>
+            </div>
+            <div class="temp-section">
+                <img class="weather-icon"
+                    src="https://openweathermap.org/img/wn/{{ weather.icon }}@2x.png"
+                    alt="weather icon">
+                <div class="temperature">{{ weather.temperature }}°C</div>
+                <div class="feels-like">Feels like {{ weather.feels_like }}°C</div>
+            </div>
+        </div>
+
+        <!-- Humidity Card -->
+        <div class="card info-card">
+            <div class="info-icon"><i class="fas fa-tint"></i></div>
+            <div>
+                <div class="info-label">Humidity</div>
+                <div class="info-value">{{ weather.humidity }}%</div>
+            </div>
+        </div>
+
+        <!-- Wind Card -->
+        <div class="card info-card">
+            <div class="info-icon"><i class="fas fa-wind"></i></div>
+            <div>
+                <div class="info-label">Wind Speed</div>
+                <div class="info-value">{{ weather.wind_speed }} m/s</div>
+            </div>
+        </div>
+
+        <!-- Pressure Card -->
+        <div class="card info-card">
+            <div class="info-icon"><i class="fas fa-gauge"></i></div>
+            <div>
+                <div class="info-label">Pressure</div>
+                <div class="info-value">{{ weather.pressure }} hPa</div>
+            </div>
+        </div>
+
+        <!-- Visibility Card -->
+        <div class="card info-card">
+            <div class="info-icon"><i class="fas fa-eye"></i></div>
+            <div>
+                <div class="info-label">Visibility</div>
+                <div class="info-value">{{ weather.visibility }} m</div>
+            </div>
+        </div>
+
+        <!-- 5 Day Forecast -->
+        {% if forecast %}
+        <div class="card full-width">
+            <div class="section-title">5-Day Forecast</div>
+            <div class="forecast-grid">
+                {% for day in forecast %}
+                <div class="forecast-item">
+                    <div class="forecast-date">{{ day.date }}</div>
+                    <img class="forecast-icon"
+                        src="https://openweathermap.org/img/wn/{{ day.icon }}@2x.png"
+                        alt="icon">
+                    <div class="forecast-temp-max">{{ day.temp_max }}°C</div>
+                    <div class="forecast-temp-min">{{ day.temp_min }}°C</div>
+                    <div class="forecast-desc">{{ day.description }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Temperature Chart -->
+        {% if forecast %}
+        <div class="card full-width">
+            <div class="section-title">Temperature Trend</div>
+            <div class="chart-wrapper">
+                <canvas id="tempChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Humidity Chart -->
+        <div class="card full-width">
+            <div class="section-title">Humidity Trend</div>
+            <div class="chart-wrapper">
+                <canvas id="humidityChart"></canvas>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+    {% endif %}
+
+    <script>
+        // Theme Toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            const text = document.getElementById('theme-text');
+
+            if (html.getAttribute('data-theme') === 'dark') {
+                html.setAttribute('data-theme', 'light');
+                icon.className = 'fas fa-sun';
+                text.textContent = 'Dark Mode';
+            } else {
+                html.setAttribute('data-theme', 'dark');
+                icon.className = 'fas fa-moon';
+                text.textContent = 'Light Mode';
+            }
+        }
+
+        // Charts
+        {% if forecast %}
+        const labels = [{% for day in forecast %}"{{ day.date }}"{% if not forloop.last %},{% endif %}{% endfor %}];
+        const tempMax = [{% for day in forecast %}{{ day.temp_max }}{% if not forloop.last %},{% endif %}{% endfor %}];
+        const tempMin = [{% for day in forecast %}{{ day.temp_min }}{% if not forloop.last %},{% endif %}{% endfor %}];
+        const humidity = [{% for day in forecast %}{{ day.humidity }}{% if not forloop.last %},{% endif %}{% endfor %}];
+
+        // Temperature Chart
+        new Chart(document.getElementById('tempChart'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Max Temp (°C)',
+                        data: tempMax,
+                        borderColor: '#38bdf8',
+                        backgroundColor: '#38bdf820',
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#38bdf8',
+                    },
+                    {
+                        label: 'Min Temp (°C)',
+                        data: tempMin,
+                        borderColor: '#818cf8',
+                        backgroundColor: '#818cf820',
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#818cf8',
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: '#94a3b8' }
+                    }
+                },
+                scales: {
+                    x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+                    y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+                }
+            }
+        });
+
+        // Humidity Chart
+        new Chart(document.getElementById('humidityChart'), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Humidity (%)',
+                    data: humidity,
+                    backgroundColor: '#38bdf850',
+                    borderColor: '#38bdf8',
+                    borderWidth: 2,
+                    borderRadius: 8,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: '#94a3b8' }
+                    }
+                },
+                scales: {
+                    x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+                    y: {
+                        ticks: { color: '#94a3b8' },
+                        grid: { color: '#334155' },
+                        max: 100
+                    }
+                }
+            }
+        });
+        {% endif %}
+    </script>
+
+</body>
+</html> 
